@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Courier Pickup Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .notification {
+            animation: slideIn 0.5s ease-in-out;
+        }
+        @keyframes slideIn {
+            from { transform: translateY(-100%); }
+            to { transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen flex">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white shadow-lg hidden md:block">
+            <div class="p-4">
+                <h1 class="text-xl font-bold text-gray-800">Pickup Manager</h1>
+            </div>
+            <nav class="mt-4">
+                <a href="#dashboard" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700">
+                    <i class="bi bi-grid-1x2-fill mr-3"></i>
+                    Dashboard
+                </a>
+                <a href="#pickups" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700">
+                    <i class="bi bi-box-seam mr-3"></i>
+                    Pickups
+                </a>
+                <a href="#staff" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700">
+                    <i class="bi bi-people-fill mr-3"></i>
+                    Staff
+                </a>
+                <a href="#assignments" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700">
+                    <i class="bi bi-clipboard2-check mr-3"></i>
+                    Assignments
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-6">
+            <div class="mb-6 flex justify-between items-center">
+                <h2 class="text-2xl font-semibold text-gray-800">Active Pickups</h2>
+                <button onclick="showAddPickupModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                    Add New Pickup
+                </button>
+            </div>
+
+            <!-- Pickup List -->
+            <div class="bg-white rounded-lg shadow-sm" id="pickupList">
+                <!-- Pickup items will be dynamically added here -->
+            </div>
+
+            <!-- Add Pickup Modal -->
+            <div id="addPickupModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                <div class="bg-white p-6 rounded-lg w-full max-w-md">
+                    <h3 class="text-xl font-semibold mb-4">Add New Pickup</h3>
+                    <form id="pickupForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Address</label>
+                            <input type="text" id="pickupAddress" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Package Details</label>
+                            <textarea id="pickupDetails" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border" required></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Assign Staff</label>
+                            <select id="staffSelect" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border" required>
+                                <option value="">Select Staff Member</option>
+                            </select>
+                        </div>
+                        <div class="flex justify-end gap-2">
+                            <button type="button" onclick="hideAddPickupModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800">Cancel</button>
+                            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Add Pickup</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Sample data structure
+        let pickups = [];
+        let staff = [
+            { id: 1, name: "John Doe" },
+            { id: 2, name: "Jane Smith" }
+        ];
+
+        // Initialize the application
+        function init() {
+            updateStaffSelect();
+            renderPickups();
+        }
+
+        // Show/Hide Modal
+        function showAddPickupModal() {
+            document.getElementById('addPickupModal').classList.remove('hidden');
+        }
+
+        function hideAddPickupModal() {
+            document.getElementById('addPickupModal').classList.add('hidden');
+        }
+
+        // Update staff select dropdown
+        function updateStaffSelect() {
+            const select = document.getElementById('staffSelect');
+            staff.forEach(member => {
+                const option = document.createElement('option');
+                option.value = member.id;
+                option.textContent = member.name;
+                select.appendChild(option);
+            });
+        }
+
+        // Render pickups
+        function renderPickups() {
+            const pickupList = document.getElementById('pickupList');
+            pickupList.innerHTML = pickups.length === 0 
+                ? '<p class="p-4 text-gray-500">No active pickups</p>'
+                : pickups.map(pickup => `
+                    <div class="border-b p-4 flex justify-between items-center">
+                        <div>
+                            <h4 class="font-medium">${pickup.address}</h4>
+                            <p class="text-sm text-gray-600">${pickup.details}</p>
+                            <p class="text-sm text-gray-500">Assigned to: ${getStaffName(pickup.staffId)}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="updatePickupStatus(${pickup.id}, 'completed')" 
+                                class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">
+                                Complete
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+        }
+
+        // Get staff name by ID
+        function getStaffName(id) {
+            const staffMember = staff.find(s => s.id === id);
+            return staffMember ? staffMember.name : 'Unassigned';
+        }
+
+        // Handle form submission
+        document.getElementById('pickupForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const newPickup = {
+                id: Date.now(),
+                address: document.getElementById('pickupAddress').value,
+                details: document.getElementById('pickupDetails').value,
+                staffId: parseInt(document.getElementById('staffSelect').value),
+                status: 'pending'
+            };
+            pickups.push(newPickup);
+            renderPickups();
+            hideAddPickupModal();
+            showNotification(`New pickup assigned to ${getStaffName(newPickup.staffId)}`);
+            this.reset();
+        });
+
+        // Show notification
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'notification fixed top-4 right-4 bg-green-100 text-green-700 px-4 py-2 rounded-lg shadow-lg';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
+
+        // Update pickup status
+        function updatePickupStatus(id, status) {
+            const pickup = pickups.find(p => p.id === id);
+            if (pickup) {
+                pickup.status = status;
+                if (status === 'completed') {
+                    pickups = pickups.filter(p => p.id !== id);
+                }
+                renderPickups();
+                showNotification('Pickup status updated');
+            }
+        }
+
+        // Initialize the app
+        init();
+    </script>
+<script>document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
+	</body>
+</html>
